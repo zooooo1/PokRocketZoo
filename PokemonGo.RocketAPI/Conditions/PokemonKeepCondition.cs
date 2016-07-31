@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CsvHelper.Configuration;
 
-namespace PokemonGo.RocketAPI
+namespace PokemonGo.RocketAPI.Conditions
 {
     public class PokemonKeepCondition
     {

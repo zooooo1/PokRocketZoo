@@ -11,6 +11,7 @@ using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
 using PokemonGo.RocketAPI.Logic.Utils;
 using PokemonGo.RocketAPI.Helpers;
+using PokemonGo.RocketAPI.Conditions;
 using System.IO;
 using System.Text;
 using PokemonGo.RocketAPI.Logging;
@@ -35,6 +36,7 @@ namespace PokemonGo.RocketAPI.Logic
         private ICollection<PokemonId> PokemonsNotToCatch;
         private IDictionary<PokemonId, PokemonKeepCondition> PokemonsToKeep;
         private IEnumerable<LocationCondition> LocationsCondition;
+        private AuthCondition UserAuthCondition;
 
         public Logic(ISettings clientSettings)
         {
@@ -51,6 +53,7 @@ namespace PokemonGo.RocketAPI.Logic
 
             // load config files
             Logger.Write($"Load config files ...", LogLevel.Info);
+            UserAuthCondition = _clientSettings.UserAuthCondition;
             PokemonsNotToTransfer = _clientSettings.PokemonsNotToTransfer;
             PokemonsNotToCatch = _clientSettings.PokemonsNotToCatch;
             PokemonsToEvolve = _clientSettings.PokemonsToEvolve;
@@ -74,18 +77,21 @@ namespace PokemonGo.RocketAPI.Logic
                 }
             }
 
-            Logger.Write($"Logging in via: {_clientSettings.AuthType}", LogLevel.Info);
+            Logger.Write($"Logging in via: {UserAuthCondition.UserAuthType}", LogLevel.Info);
             while (true)
             {
                 try
                 {
-                    switch (_clientSettings.AuthType)
+                    switch (UserAuthCondition.UserAuthType)
                     {
                         case AuthType.Ptc:
-                            await _client.DoPtcLogin(_clientSettings.PtcUsername, _clientSettings.PtcPassword);
+                            await _client.DoPtcLogin(UserAuthCondition.Username, UserAuthCondition.Password);
                             break;
                         case AuthType.Google:
-                            await _client.DoGoogleLogin(_clientSettings.GoogleUsername, _clientSettings.GooglePassword);
+                            await _client.DoGoogleLogin(UserAuthCondition.Username, UserAuthCondition.Password);
+                            break;
+                        case AuthType.GoogleDevice:
+                            await _client.DoGoogleDeviceLogin();
                             break;
                         default:
                             Logger.Write("wrong AuthType");
@@ -121,16 +127,11 @@ namespace PokemonGo.RocketAPI.Logic
                 var _currentLevelInfos = await Statistics._getcurrentLevelInfos(_inventory);
 
                 Logger.Write("----------------------------", LogLevel.None, ConsoleColor.Yellow);
-                if (_clientSettings.AuthType == AuthType.Ptc)
-                {
-                    Logger.Write($"PTC Account: {_clientSettings.PtcUsername}\n", LogLevel.None, ConsoleColor.Cyan);
-                    Statistics.PlayerName = _clientSettings.PtcUsername;
-                }
+                Statistics.PlayerName = UserAuthCondition.Username;
+                if (UserAuthCondition.UserAuthType == AuthType.Ptc)
+                    Logger.Write($"PTC Account: {UserAuthCondition.Username}\n", LogLevel.None, ConsoleColor.Cyan);
                 else
-                {
-                    Logger.Write($"Google Account: {_clientSettings.GoogleUsername}\n", LogLevel.None, ConsoleColor.Cyan);
-                    Statistics.PlayerName = _clientSettings.GoogleUsername;
-                }
+                    Logger.Write($"Google Account: {UserAuthCondition.Username}\n", LogLevel.None, ConsoleColor.Cyan);
 
                 Logger.Write("----------------------------", LogLevel.None, ConsoleColor.Yellow);
                 Logger.Write("Your Account:\n");

@@ -6,6 +6,7 @@ using System.IO;
 using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.GeneratedCode;
 using PokemonGo.RocketAPI.Logging;
+using PokemonGo.RocketAPI.Conditions;
 using CsvHelper;
 using CsvHelper.Configuration;
 
@@ -16,19 +17,14 @@ namespace PokemonGo.RocketAPI.Console
 {
     public class Settings : ISettings
     {
-        public AuthType AuthType => (AuthType)Enum.Parse(typeof(AuthType), UserSettings.Default.AuthType, true);
-        public string PtcUsername => UserSettings.Default.PtcUsername;
-        public string PtcPassword => UserSettings.Default.PtcPassword;
-
         public bool EvolveAllPokemonWithEnoughCandy => UserSettings.Default.EvolveAllPokemonWithEnoughCandy;
-        public string GoogleUsername => UserSettings.Default.GoogleUsername;
-        public string GooglePassword => UserSettings.Default.GooglePassword;
 
         private ICollection<PokemonId> _pokemonsToEvolve;
         private ICollection<PokemonId> _pokemonsNotToTransfer;
         private ICollection<PokemonId> _pokemonsNotToCatch;
         private IDictionary<PokemonId, PokemonKeepCondition> _pokemonsToKeepCondition;
         private IEnumerable<LocationCondition> _locationsCondition;
+        private AuthCondition _userAuthCondition;
 
         public string GoogleRefreshToken
         {
@@ -114,7 +110,7 @@ namespace PokemonGo.RocketAPI.Console
         private ICollection<PokemonId> LoadPokemonList(string filename)
         {
             ICollection<PokemonId> result = new List<PokemonId>();
-            string path = Directory.GetCurrentDirectory() + "\\Configs\\";
+            string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.ConfigPath + "\\";
             if (!Directory.Exists(path))
             {
                 DirectoryInfo di = Directory.CreateDirectory(path);
@@ -127,7 +123,7 @@ namespace PokemonGo.RocketAPI.Console
             }
             if (File.Exists(path + filename + ".txt"))
             {
-                Logger.Write($"Loading File: Configs\\{filename}", LogLevel.Info);
+                Logger.Write($"Loading File: {UserSettings.Default.ConfigPath}\\{filename}", LogLevel.Info);
                 string[] _locallist = File.ReadAllLines(path + filename + ".txt");
                 foreach (string pokemonName in _locallist)
                 {
@@ -151,14 +147,14 @@ namespace PokemonGo.RocketAPI.Console
         private IDictionary<PokemonId, PokemonKeepCondition> LoadPokemonKeepCsv(string filename)
         {
             IDictionary<PokemonId, PokemonKeepCondition> result = new Dictionary<PokemonId, PokemonKeepCondition>();
-            string path = Directory.GetCurrentDirectory() + "\\Configs\\";
+            string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.ConfigPath + "\\";
             if (!Directory.Exists(path))
             {
                 DirectoryInfo di = Directory.CreateDirectory(path);
             }
             if (File.Exists(path + filename + ".csv"))
             {
-                Logger.Write($"Loading File: Configs\\{filename}", LogLevel.Info);
+                Logger.Write($"Loading File: {UserSettings.Default.ConfigPath}\\{filename}", LogLevel.Info);
                 using (var sr = new StreamReader(path + filename + ".csv"))
                 using (var csv = new CsvHelper.CsvReader(sr))
                 {
@@ -187,14 +183,14 @@ namespace PokemonGo.RocketAPI.Console
         private IEnumerable<LocationCondition> LoadLocationsCsv(string filename)
         {
             List<LocationCondition> result = new List<LocationCondition>();
-            string path = Directory.GetCurrentDirectory() + "\\Configs\\";
+            string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.ConfigPath + "\\";
             if (!Directory.Exists(path))
             {
                 DirectoryInfo di = Directory.CreateDirectory(path);
             }
             if (File.Exists(path + filename + ".csv"))
             {
-                Logger.Write($"Loading File: Configs\\{filename}", LogLevel.Info);
+                Logger.Write($"Loading File: {UserSettings.Default.ConfigPath}\\{filename}", LogLevel.Info);
                 using (var sr = new StreamReader(path + filename + ".csv"))
                 using (var csv = new CsvHelper.CsvReader(sr))
                 {
@@ -203,6 +199,38 @@ namespace PokemonGo.RocketAPI.Console
                     foreach (var record in records)
                     {
                         result.Add(record);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public AuthCondition UserAuthCondition
+        {
+            get
+            {
+                //Type of pokemons not to catch
+                _userAuthCondition = _userAuthCondition ?? LoadAuthCondition("Auth");
+                return _userAuthCondition;
+            }
+        }
+
+
+        private AuthCondition LoadAuthCondition(string filename)
+        {
+            AuthCondition result = new AuthCondition();
+            string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.AuthPath;
+            if (File.Exists(path))
+            {
+                Logger.Write($"Loading File: {UserSettings.Default.AuthPath}", LogLevel.Info);
+                using (var sr = new StreamReader(path))
+                using (var csv = new CsvHelper.CsvReader(sr))
+                {
+                    csv.Configuration.RegisterClassMap<AuthConditionMap>();
+                    var records = csv.GetRecords<AuthCondition>();
+                    foreach (var record in records)
+                    {
+                        result = record;
                     }
                 }
             }

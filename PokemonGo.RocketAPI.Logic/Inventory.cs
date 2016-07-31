@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.GeneratedCode;
+using PokemonGo.RocketAPI.Conditions;
 using System.Collections.Concurrent;
 using System;
 using System.Threading;

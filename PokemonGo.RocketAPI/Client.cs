@@ -13,6 +13,7 @@ using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
 using PokemonGo.RocketAPI.Helpers;
 using PokemonGo.RocketAPI.Login;
+using PokemonGo.RocketAPI.Conditions;
 using static PokemonGo.RocketAPI.GeneratedCode.Response.Types;
 using PokemonGo.RocketAPI.Logging;
 
@@ -27,7 +28,7 @@ namespace PokemonGo.RocketAPI
         private string _apiUrl;
         private AuthType _authType = AuthType.Google;
         private Request.Types.UnknownAuth _unknownAuth;
-//        private Boolean isFirstTime = true; // google device code was dead
+        private Boolean isFirstTime = true; // google device code was dead
 
         public Client(ISettings settings)
         {
@@ -134,7 +135,14 @@ namespace PokemonGo.RocketAPI
         public async Task DoGoogleLogin(string username, string password)
         {
             _authType = AuthType.Google;
-            /*
+
+            AccessToken = await GoogleLoginGPSOAuth.DoLogin(username, password);
+        }
+
+        public async Task DoGoogleDeviceLogin()
+        {
+            _authType = AuthType.GoogleDevice;
+
             GoogleLogin.TokenResponseModel tokenResponse;
 
             if (Settings.GoogleRefreshToken != string.Empty)
@@ -152,8 +160,6 @@ namespace PokemonGo.RocketAPI
                 AccessToken = tokenResponse?.id_token;
                 isFirstTime = false;
             }
-            */
-            AccessToken = await GoogleLoginGPSOAuth.DoLogin(username, password);
         }
 
         public async Task DoPtcLogin(string username, string password)

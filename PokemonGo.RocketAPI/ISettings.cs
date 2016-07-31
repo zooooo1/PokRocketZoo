@@ -3,6 +3,7 @@
 using PokemonGo.RocketAPI.Enums;
 using System.Collections.Generic;
 using PokemonGo.RocketAPI.GeneratedCode;
+using PokemonGo.RocketAPI.Conditions;
 
 #endregion
 
@@ -11,13 +12,8 @@ namespace PokemonGo.RocketAPI
 {
     public interface ISettings
     {
-        AuthType AuthType { get; }
         string GoogleRefreshToken { get; set; }
-        string PtcPassword { get; }
-        string PtcUsername { get; }
         bool EvolveAllPokemonWithEnoughCandy { get; }
-        string GooglePassword { get; }
-        string GoogleUsername { get; }
 
         ICollection<KeyValuePair<ItemId, int>> ItemRecycleFilter { get; }
 
@@ -30,5 +26,7 @@ namespace PokemonGo.RocketAPI
         IDictionary<PokemonId, PokemonKeepCondition> PokemonsToKeepCondition { get; }
 
         IEnumerable<LocationCondition> LocationsCondition { get; }
+
+        AuthCondition UserAuthCondition { get; }
     }
 }

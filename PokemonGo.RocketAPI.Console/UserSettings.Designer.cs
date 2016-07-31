@@ -37,18 +37,6 @@ namespace PokemonGo.RocketAPI.Console {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Google\r\n")]
-        public string AuthType {
-            get {
-                return ((string)(this["AuthType"]));
-            }
-            set {
-                this["AuthType"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool EvolveAllPokemonWithEnoughCandy {
             get {
@@ -61,49 +49,25 @@ namespace PokemonGo.RocketAPI.Console {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("username")]
-        public string PtcUsername {
+        [global::System.Configuration.DefaultSettingValueAttribute("Configs\\Auth.csv")]
+        public string AuthPath {
             get {
-                return ((string)(this["PtcUsername"]));
+                return ((string)(this["AuthPath"]));
             }
             set {
-                this["PtcUsername"] = value;
+                this["AuthPath"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("password")]
-        public string PtcPassword {
+        [global::System.Configuration.DefaultSettingValueAttribute("Configs")]
+        public string ConfigPath {
             get {
-                return ((string)(this["PtcPassword"]));
+                return ((string)(this["ConfigPath"]));
             }
             set {
-                this["PtcPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("zoogoom21@gmail.com")]
-        public string GoogleUsername {
-            get {
-                return ((string)(this["GoogleUsername"]));
-            }
-            set {
-                this["GoogleUsername"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("asdfQWER1234")]
-        public string GooglePassword {
-            get {
-                return ((string)(this["GooglePassword"]));
-            }
-            set {
-                this["GooglePassword"] = value;
+                this["ConfigPath"] = value;
             }
         }
     }
