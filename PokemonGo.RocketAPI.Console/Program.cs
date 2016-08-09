@@ -1,6 +1,9 @@
 ﻿#region
 
 using System;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using PokemonGo.RocketAPI.Exceptions;
@@ -13,17 +16,17 @@ namespace PokemonGo.RocketAPI.Console
 {
     internal class Program
     {
-
-        private static void Main(string[] args)
+        private static void Main()
         {
             AppDomain.CurrentDomain.UnhandledException
                 += delegate (object sender, UnhandledExceptionEventArgs eargs)
                 {
                     Exception exception = (Exception)eargs.ExceptionObject;
-                    System.Console.WriteLine("Unhandled exception: " + exception);
+                    System.Console.WriteLine(@"Unhandled exception: " + exception);
                     Environment.Exit(1);
                 };
 
+            ServicePointManager.ServerCertificateValidationCallback = Validator;
             Logger.SetLogger();
 
             Task.Run(() =>
@@ -52,5 +55,7 @@ namespace PokemonGo.RocketAPI.Console
             });
              System.Console.ReadLine();
         }
+
+        public static bool Validator(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) => true;
     }
 }
