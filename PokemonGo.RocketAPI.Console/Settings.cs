@@ -19,8 +19,6 @@ namespace PokemonGo.RocketAPI.Console
 {
     public class Settings : ISettings
     {
-        public bool EvolveAllPokemonWithEnoughCandy => UserSettings.Default.EvolveAllPokemonWithEnoughCandy;
-
         private AuthCondition _userAuthCondition;
         private ICollection<PokemonId> _pokemonsToEvolve;
         private ICollection<PokemonId> _pokemonsNotToTransfer;
@@ -40,6 +38,7 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
+        // original (might be dummy)
         public AuthType AuthType { get { return _userAuthCondition.UserAuthType; } }
         public string PtcPassword { get { return _userAuthCondition.Password; } }
         public string PtcUsername { get { return _userAuthCondition.Username; } }
@@ -48,13 +47,37 @@ namespace PokemonGo.RocketAPI.Console
         public double DefaultLatitude { get { return LocationsCondition.First().Latitude; } }
         public double DefaultLongitude { get { return LocationsCondition.First().Longitude; } }
         public double DefaultAltitude { get { return LocationsCondition.First().Altitude; } }
+        public bool UseGPXPathing { get { return false; } }
+        public string GPXFile { get { return "";  } }
+        public bool GPXIgnorePokestops { get { return false; } }
+        public double WalkingSpeedInKilometerPerHour { get { return 30; } }
+        public int MaxTravelDistanceInMeters { get { return 500; } }
 
+        public bool UsePokemonToNotCatchList { get { return true; } }
+        public bool UsePokemonToNotTransferList { get { return true; } }
+        public bool UsePokemonToEvolveList { get { return true; } }
+        public bool CatchPokemon { get { return true; } }
+
+        public bool EvolvePokemon { get { return false; } }
+        public bool EvolveOnlyPokemonAboveIV { get { return true; } }
+        public float EvolveOnlyPokemonAboveIVValue { get { return 95; } }
+        public int EvolveKeepCandiesValue { get { return 100; } }
+
+        public bool TransferPokemon { get { return true; } }
+        public int TransferPokemonKeepDuplicateAmount { get { return 1; } }
+        public bool NotTransferPokemonsThatCanEvolve { get { return false; } }
+        public bool UseTransferPokemonKeepAboveCP { get { return true; } }
+        public int TransferPokemonKeepAboveCP { get { return 1000; } }
+        public bool UseTransferPokemonKeepAboveIV { get { return true; } }
+        public float TransferPokemonKeepAboveIVPercentage { get { return 85; } }
+
+        public bool PrioritizeIVOverCP { get { return false; } }
         public bool UseLuckyEggs { get { return false; } }
         public bool UseIncense { get { return false; } }
         public bool DebugMode { get { return true; } }
         public bool UseTeleportInsteadOfWalking { get { return false; } }
 
-
+        // read settings
         public ICollection<KeyValuePair<ItemId, int>> ItemRecycleFilter => new[]
         {
             new KeyValuePair<ItemId, int>(ItemId.ItemUnknown, 0),
@@ -106,7 +129,7 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
-        public ICollection<PokemonId> PokemonsNotToTransfer
+        public ICollection<PokemonId> PokemonsToNotTransfer
         {
             get
             {
@@ -116,7 +139,7 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
-        public ICollection<PokemonId> PokemonsNotToCatch
+        public ICollection<PokemonId> PokemonsToNotCatch
         {
             get
             {

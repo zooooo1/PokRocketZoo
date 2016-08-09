@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PokemonGo.RocketAPI.Conditions;
+using PokemonGo.RocketAPI.Enums;
 using System;
 using System.Threading;
 using PokemonGo.RocketAPI.Logging;
@@ -36,32 +36,32 @@ namespace PokemonGo.RocketAPI.Logic
             _client = client;
         }
 
-        public async Task<IEnumerable<PokemonData>> GetPokemonToTransfer(IEnumerable<PokemonId> filter = null)
-        {
-            IDictionary<PokemonId, PokemonKeepCondition> conditions = _client.Settings.PokemonsToKeepCondition;
+        public async Task<IEnumerable<PokemonData>> GetPokemonToTransfer(bool keepPokemonsThatCanEvolve = false, bool prioritizeIVoverCp = false, IEnumerable<PokemonId> filter = null)
+        {    
             var myPokemon = await GetPokemons();
             var pokemonList = myPokemon.Where(p => p.DeployedFortId == String.Empty && p.Favorite == 0).ToList();
-            if (filter != null)
+            if (_client.Settings.UsePokemonToNotTransferList && filter != null)
                 pokemonList = pokemonList.Where(p => !filter.Contains(p.PokemonId)).ToList();
+            if (_client.Settings.UseTransferPokemonKeepAboveCP)
+                pokemonList = pokemonList.Where(p => p.Cp < _client.Settings.TransferPokemonKeepAboveCP).ToList();
+            if (_client.Settings.UseTransferPokemonKeepAboveIV)
+                pokemonList = pokemonList.Where(p => PokemonInfo.CalculatePokemonPerfection(p) < _client.Settings.TransferPokemonKeepAboveIVPercentage).ToList();
 
-                pokemonList = pokemonList.Where(p => p.Cp < conditions[p.PokemonId].MinCP).ToList();
-                pokemonList = pokemonList.Where(p => PokemonInfo.CalculatePokemonPerfection(p) < conditions[p.PokemonId].MinIVRate).ToList();
-
-            /*if (!keepPokemonsThatCanEvolve)
+            if (!keepPokemonsThatCanEvolve)
                 return pokemonList
                     .GroupBy(p => p.PokemonId)
                     .Where(x => x.Any())
                     .SelectMany(
                         p =>
                             p.OrderByDescending(
-                                x => x.Cp)
+                                x => (prioritizeIVoverCp) ? PokemonInfo.CalculatePokemonPerfection(x) : x.Cp)
                                 .ThenBy(n => n.StaminaMax)
-                                .Skip(conditions[p.PokemonId].MaxNumber)
-                                .ToList());*/
+                                .Skip(_client.Settings.TransferPokemonKeepDuplicateAmount)
+                                .ToList());
 
 
             var results = new List<PokemonData>();
-            var pokemonsThatCanBeTransfered = pokemonList.GroupBy(p => p.PokemonId).Where(x => x.Count() > conditions[x.Key].MaxNumber).ToList();
+            var pokemonsThatCanBeTransfered = pokemonList.GroupBy(p => p.PokemonId).Where(x => x.Count() > _client.Settings.TransferPokemonKeepDuplicateAmount).ToList();
 
             var myPokemonSettings = await GetPokemonSettings();
             var pokemonSettings = myPokemonSettings.ToList();
@@ -73,7 +73,7 @@ namespace PokemonGo.RocketAPI.Logic
             {
                 var settings = pokemonSettings.Single(x => x.PokemonId == pokemon.Key);
                 var familyCandy = pokemonFamilies.Single(x => settings.FamilyId == x.FamilyId);
-                var amountToSkip = conditions[pokemon.Key].MaxNumber;
+                var amountToSkip = _client.Settings.TransferPokemonKeepDuplicateAmount;
 
                 if (settings.CandyToEvolve > 0)
                 {
@@ -84,7 +84,7 @@ namespace PokemonGo.RocketAPI.Logic
 
                 results.AddRange(pokemonList.Where(x => x.PokemonId == pokemon.Key)
                     .OrderByDescending(
-                        x => x.Cp)
+                        x => (prioritizeIVoverCp) ? PokemonInfo.CalculatePokemonPerfection(x) : x.Cp)
                     .ThenBy(n => n.StaminaMax)
                     .Skip(amountToSkip)
                     .ToList());
@@ -200,13 +200,12 @@ namespace PokemonGo.RocketAPI.Logic
 
         public async Task<IEnumerable<PokemonData>> GetPokemonToEvolve(bool prioritizeIVoverCp = false, IEnumerable < PokemonId> filter = null)
         {
-            IDictionary<PokemonId, PokemonKeepCondition> conditions = _client.Settings.PokemonsToKeepCondition; // TODO:
             var myPokemons = await GetPokemons();
             myPokemons = myPokemons.Where(p => p.DeployedFortId == string.Empty);
-            if (filter != null)
-                myPokemons = myPokemons.Where(p => filter.Contains(p.PokemonId));
-
-            myPokemons = myPokemons.Where(p => PokemonInfo.CalculatePokemonPerfection(p) >= conditions[p.PokemonId].MinIVRate);
+            if (_client.Settings.UsePokemonToEvolveList && filter != null)
+                myPokemons = myPokemons.Where(p => filter.Contains(p.PokemonId));		
+            if (_client.Settings.EvolveOnlyPokemonAboveIV)
+                myPokemons = myPokemons.Where(p => PokemonInfo.CalculatePokemonPerfection(p) >= _client.Settings.EvolveOnlyPokemonAboveIVValue);
             myPokemons = prioritizeIVoverCp ? myPokemons.OrderByDescending(PokemonInfo.CalculatePokemonPerfection) : myPokemons.OrderByDescending(p => p.Cp);
 
             var pokemons = myPokemons.ToList();
@@ -218,7 +217,6 @@ namespace PokemonGo.RocketAPI.Logic
             var pokemonFamilies = myPokemonFamilies.ToArray();
 
             var pokemonToEvolve = new List<PokemonData>();
-            /*
             foreach (var pokemon in pokemons)
             {
                 var settings = pokemonSettings.Single(x => x.PokemonId == pokemon.PokemonId);
@@ -244,7 +242,7 @@ namespace PokemonGo.RocketAPI.Logic
                 else if (familiecandies - pokemonCandyNeededAlready > settings.CandyToEvolve)
                     pokemonToEvolve.Add(pokemon);
             }
-*/
+
             return pokemonToEvolve;
         }
 
@@ -282,7 +280,6 @@ namespace PokemonGo.RocketAPI.Logic
 
         public async Task<List<FortData>> GetPokestops(bool path = false)
         {
-            LocationCondition condition = _client.Settings.LocationsCondition.First();
             var mapObjects = await _client.Map.GetMapObjects();
             var pokeStops = mapObjects.Item1.MapCells.SelectMany(i => i.Forts)
                 .Where(
@@ -293,9 +290,9 @@ namespace PokemonGo.RocketAPI.Logic
                             _client.CurrentLatitude, _client.CurrentLongitude,
                             i.Latitude, i.Longitude) < 40)
                            : (LocationUtils.CalculateDistanceInMeters(
-                                condition.Latitude, condition.Longitude,
-                                i.Latitude, i.Longitude) < condition.Radius) ||
-                                condition.Radius == 0
+                                _client.Settings.DefaultLatitude, _client.Settings.DefaultLongitude,
+                                i.Latitude, i.Longitude) < _client.Settings.MaxTravelDistanceInMeters) ||
+                                _client.Settings.MaxTravelDistanceInMeters == 0
                       ).ToList();
 
             return pokeStops.OrderBy(
