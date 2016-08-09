@@ -27,14 +27,14 @@ namespace PokemonGo.RocketAPI.Rpc
 
         private static ILoginType SetLoginType(ISettings settings)
         {
-            switch (settings.UserAuthCondition.UserAuthType)
+            switch (settings.AuthType)
             {
                 case AuthType.Google:
-                    return new GoogleLogin(settings.UserAuthCondition.Username, settings.UserAuthCondition.Password);
+                    return new GoogleLogin(settings.GoogleEmail, settings.GooglePassword);
                 case AuthType.Ptc:
-                    return new PtcLogin(settings.UserAuthCondition.Username, settings.UserAuthCondition.Password);
+                    return new PtcLogin(settings.PtcUsername, settings.PtcPassword);
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(settings.UserAuthCondition.UserAuthType), "Unknown AuthType");
+                    throw new ArgumentOutOfRangeException(nameof(settings.AuthType), "Unknown AuthType");
             }
         }
 

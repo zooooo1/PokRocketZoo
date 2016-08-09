@@ -1,10 +1,12 @@
 ﻿#region
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using POGOProtos.Enums;
+using POGOProtos.Inventory.Item;
 using PokemonGo.RocketAPI.Enums;
-using PokemonGo.RocketAPI.GeneratedCode;
 using PokemonGo.RocketAPI.Logging;
 using PokemonGo.RocketAPI.Conditions;
 using CsvHelper;
@@ -19,12 +21,14 @@ namespace PokemonGo.RocketAPI.Console
     {
         public bool EvolveAllPokemonWithEnoughCandy => UserSettings.Default.EvolveAllPokemonWithEnoughCandy;
 
+        private AuthCondition _userAuthCondition;
         private ICollection<PokemonId> _pokemonsToEvolve;
         private ICollection<PokemonId> _pokemonsNotToTransfer;
         private ICollection<PokemonId> _pokemonsNotToCatch;
         private IDictionary<PokemonId, PokemonKeepCondition> _pokemonsToKeepCondition;
         private IEnumerable<LocationCondition> _locationsCondition;
-        private AuthCondition _userAuthCondition;
+        private ICollection<PokemonId> _snipePokemons;
+        private IEnumerable<Location> _snipeLocations;
 
         public string GoogleRefreshToken
         {
@@ -35,6 +39,21 @@ namespace PokemonGo.RocketAPI.Console
                 UserSettings.Default.Save();
             }
         }
+
+        public AuthType AuthType { get { return _userAuthCondition.UserAuthType; } }
+        public string PtcPassword { get { return _userAuthCondition.Password; } }
+        public string PtcUsername { get { return _userAuthCondition.Username; } }
+        public string GoogleEmail { get { return _userAuthCondition.Username;  } }
+        public string GooglePassword { get { return _userAuthCondition.Password; } }
+        public double DefaultLatitude { get { return LocationsCondition.First().Latitude; } }
+        public double DefaultLongitude { get { return LocationsCondition.First().Longitude; } }
+        public double DefaultAltitude { get { return LocationsCondition.First().Altitude; } }
+
+        public bool UseLuckyEggs { get { return false; } }
+        public bool UseIncense { get { return false; } }
+        public bool DebugMode { get { return true; } }
+        public bool UseTeleportInsteadOfWalking { get { return false; } }
+
 
         public ICollection<KeyValuePair<ItemId, int>> ItemRecycleFilter => new[]
         {
@@ -173,14 +192,13 @@ namespace PokemonGo.RocketAPI.Console
         {
             get
             {
-                //Type of pokemons not to catch
-                _locationsCondition = _locationsCondition ?? LoadLocationsCsv("Locations");
+                // move locations
+                _locationsCondition = _locationsCondition ?? LoadLocationConditionCsv("MoveLocations");
                 return _locationsCondition;
             }
         }
-        
 
-        private IEnumerable<LocationCondition> LoadLocationsCsv(string filename)
+        private IEnumerable<LocationCondition> LoadLocationConditionCsv(string filename)
         {
             List<LocationCondition> result = new List<LocationCondition>();
             string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.ConfigPath + "\\";
@@ -215,7 +233,6 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
-
         private AuthCondition LoadAuthCondition(string filename)
         {
             AuthCondition result = new AuthCondition();
@@ -236,5 +253,51 @@ namespace PokemonGo.RocketAPI.Console
             }
             return result;
         }
+
+        public ICollection<PokemonId> SnipePokemons
+        {
+            get
+            {
+                //Type of pokemons to snipe
+                _snipePokemons = _snipePokemons ?? LoadPokemonList("SnipePokemons");
+                return _snipePokemons;
+            }
+        }
+
+        public IEnumerable<Location> SnipeLocations
+        {
+            get
+            {
+                // snipe locations
+                _snipeLocations = _snipeLocations ?? LoadLocationCsv("SnipeLocations");
+                return _snipeLocations;
+            }
+        }
+
+        private IEnumerable<Location> LoadLocationCsv(string filename)
+        {
+            List<Location> result = new List<Location>();
+            string path = Directory.GetCurrentDirectory() + "\\" + UserSettings.Default.ConfigPath + "\\";
+            if (!Directory.Exists(path))
+            {
+                DirectoryInfo di = Directory.CreateDirectory(path);
+            }
+            if (File.Exists(path + filename + ".csv"))
+            {
+                Logger.Write($"Loading File: {UserSettings.Default.ConfigPath}\\{filename}", LogLevel.Info);
+                using (var sr = new StreamReader(path + filename + ".csv"))
+                using (var csv = new CsvHelper.CsvReader(sr))
+                {
+                    csv.Configuration.RegisterClassMap<LocationMap>();
+                    var records = csv.GetRecords<Location>();
+                    foreach (var record in records)
+                    {
+                        result.Add(record);
+                    }
+                }
+            }
+            return result;
+        }
+
     }
 }
