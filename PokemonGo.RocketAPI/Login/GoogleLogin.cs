@@ -1,128 +1,51 @@
-﻿#region
-
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using PokemonGo.RocketAPI.Helpers;
-using System.Windows.Forms;
-using System.Diagnostics;
+﻿using DankMemes.GPSOAuthSharp;
+using PokemonGo.RocketAPI.Exceptions;
 using System;
-using PokemonGo.RocketAPI.Logging;
-
-#endregion
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace PokemonGo.RocketAPI.Login
 {
-    public static class GoogleLogin
+    public class GoogleLogin : ILoginType
     {
-        private const string OauthTokenEndpoint = "https://www.googleapis.com/oauth2/v4/token";
-        private const string OauthEndpoint = "https://accounts.google.com/o/oauth2/device/code";
-        private const string ClientId = "848232511240-73ri3t7plvk96pj4f85uj8otdat2alem.apps.googleusercontent.com";
-        private const string ClientSecret = "NCjF1TLi2CcY6t5mt0ZveuL7";
+        private readonly string password;
+        private readonly string email;
 
-        public static async Task<TokenResponseModel> GetAccessToken(DeviceCodeModel deviceCode)
+        public GoogleLogin(string email, string password)
         {
-            //Poll until user submitted code..
-            TokenResponseModel tokenResponse;
-            do
-            {
-                await Task.Delay(2000);
-                tokenResponse = await PollSubmittedToken(deviceCode.device_code);
-            } while (tokenResponse.access_token == null || tokenResponse.refresh_token == null);
-
-            Logger.Write($"Save the refresh token in your settings: {tokenResponse.refresh_token}");
-            await Task.Delay(2000);
-            Thread thread = new Thread(() => Clipboard.SetText(tokenResponse.refresh_token));
-            thread.SetApartmentState(ApartmentState.STA); //Set the thread to STA
-            thread.Start();
-            thread.Join();
-            Logger.Write("The Token is in your Clipboard!");
-
-            return tokenResponse;
+            this.email = email;
+            this.password = password;
         }
 
-        public static async Task<DeviceCodeModel> GetDeviceCode()
+#pragma warning disable 1998
+        public async Task<string> GetAccessToken()
+#pragma warning restore 1998
         {
-            DeviceCodeModel deviceCode = null;
-            do
-            {
-                deviceCode = await HttpClientHelper.PostFormEncodedAsync<DeviceCodeModel>(OauthEndpoint,
-                    new KeyValuePair<string, string>("client_id", ClientId),
-                    new KeyValuePair<string, string>("scope", "openid email https://www.googleapis.com/auth/userinfo.email"));
+            var client = new GPSOAuthClient(email, password);
+            var response = client.PerformMasterLogin();
 
-                if (deviceCode.user_code == null)
-                {
-                    Logger.Write($"deviceCode.user_code is null. try again.");
-                    await Task.Delay(10*1000);
-                }
-            } while (deviceCode == null || deviceCode.user_code == null);
+            if (response.ContainsKey("Error"))
+                throw new GoogleException(response["Error"]);
 
-            Logger.Write($"Please visit {deviceCode.verification_url} and enter {deviceCode.user_code}");
-            await Task.Delay(2000);
-            Process.Start(@"http://www.google.com/device");
-            try
-            {
-                
-                var thread = new Thread(() => Clipboard.SetText(deviceCode.user_code)); //Copy device code
-                thread.SetApartmentState(ApartmentState.STA); //Set the thread to STA
-                thread.Start();
-                thread.Join();
-                Logger.Write("The Token is in your Clipboard!");
-            }
-            catch (Exception)
-            {
-                Logger.Write("Couldnt copy to clipboard, do it manually", LogLevel.Warning);
-            }
+            //Todo: captcha/2fa implementation
 
-            return deviceCode;
+            if (!response.ContainsKey("Auth"))
+                throw new GoogleOfflineException();
+
+            var oauthResponse = client.PerformOAuth(response["Token"],
+                "audience:server:client_id:848232511240-7so421jotr2609rmqakceuu1luuq0ptb.apps.googleusercontent.com",
+                "com.nianticlabs.pokemongo",
+                "321187995bc7cdc2b5fc91b11a96e2baa8602c62");
+
+            if (!oauthResponse.ContainsKey("Auth"))
+                throw new GoogleOfflineException();
+
+            return oauthResponse["Auth"];
         }
-
-        private static async Task<TokenResponseModel> PollSubmittedToken(string deviceCode)
-        {
-            return await HttpClientHelper.PostFormEncodedAsync<TokenResponseModel>(OauthTokenEndpoint,
-                new KeyValuePair<string, string>("client_id", ClientId),
-                new KeyValuePair<string, string>("client_secret", ClientSecret),
-                new KeyValuePair<string, string>("code", deviceCode),
-                new KeyValuePair<string, string>("grant_type", "http://oauth.net/grant_type/device/1.0"),
-                new KeyValuePair<string, string>("scope", "openid email https://www.googleapis.com/auth/userinfo.email"));
-        }
-
-        public static async Task<TokenResponseModel> GetAccessToken(string refreshToken)
-        {
-            return await HttpClientHelper.PostFormEncodedAsync<TokenResponseModel>(OauthTokenEndpoint,
-                new KeyValuePair<string, string>("access_type", "offline"),
-                new KeyValuePair<string, string>("client_id", ClientId),
-                new KeyValuePair<string, string>("client_secret", ClientSecret),
-                new KeyValuePair<string, string>("refresh_token", refreshToken),
-                new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                new KeyValuePair<string, string>("scope", "openid email https://www.googleapis.com/auth/userinfo.email"));
-        }
-
-
-        internal class ErrorResponseModel
-        {
-            public string error { get; set; }
-            public string error_description { get; set; }
-        }
-
-        public class TokenResponseModel
-        {
-            public string access_token { get; set; }
-            public string token_type { get; set; }
-            public int expires_in { get; set; }
-            public string refresh_token { get; set; }
-            public string id_token { get; set; }
-        }
-
-
-        public class DeviceCodeModel
-        {
-            public string verification_url { get; set; }
-            public int expires_in { get; set; }
-            public int interval { get; set; }
-            public string device_code { get; set; }
-            public string user_code { get; set; }
-        }
-
     }
 }

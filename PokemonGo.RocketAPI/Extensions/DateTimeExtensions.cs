@@ -1,9 +1,4 @@
-﻿#region
-
-using System;
-
-#endregion
-
+﻿using System;
 
 namespace PokemonGo.RocketAPI.Extensions
 {

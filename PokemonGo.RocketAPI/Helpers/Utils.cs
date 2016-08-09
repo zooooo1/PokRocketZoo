@@ -1,10 +1,4 @@
-﻿#region
-
-using System;
-using System.IO;
-
-#endregion
-
+﻿using System;
 
 namespace PokemonGo.RocketAPI.Helpers
 {

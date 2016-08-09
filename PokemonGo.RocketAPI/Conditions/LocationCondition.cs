@@ -16,6 +16,7 @@ namespace PokemonGo.RocketAPI.Conditions
         public int StayTime { get; set; }
         public int OperationType { get; set; }
         public int MovePokeStopMax { get; set; }
+        public double Radius { get; set; }
     }
 
     public sealed class LocationConditionMap : CsvClassMap<LocationCondition>
