@@ -59,13 +59,13 @@ namespace PokemonGo.RocketAPI
 
         // extended
         IDictionary<PokemonId, PokemonKeepCondition> PokemonsToKeepCondition { get; }
-
         IEnumerable<LocationCondition> LocationsCondition { get; }
 
         IEnumerable<Location> SnipeLocations { get; }
-
         ICollection<PokemonId> SnipePokemons { get; }
 
         AuthCondition UserAuthCondition { get; }
+
+        void setDefaultLocation(LocationCondition location);
     }
 }

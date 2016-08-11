@@ -14,7 +14,7 @@ using POGOProtos.Networking.Responses;
 
 namespace PokemonGo.RocketAPI.Logic.Utils
 {
-    internal class BotStats
+    public class BotStats
     {
         public static int TotalExperience;
         public static int TotalPokemons;

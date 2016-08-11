@@ -56,7 +56,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Inventory.cs" />
+    <Compile Include="InventoryZoo.cs" />
     <Compile Include="Logic.cs" />
+    <Compile Include="LogicZoo.cs" />
     <Compile Include="Navigation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Snipe\ScanResult.cs" />

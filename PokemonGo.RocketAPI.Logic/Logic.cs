@@ -25,19 +25,19 @@ namespace PokemonGo.RocketAPI.Logic
 {
     public class Logic
     {
-        private readonly Client _client;
-        private readonly ISettings _clientSettings;
-        private readonly Inventory _inventory;
-        private readonly BotStats _stats;
-        private readonly Navigation _navigation;
-        private GetPlayerResponse _playerProfile;
-        private static DateTime _lastLuckyEggTime;
-        private static DateTime _lastIncenseTime;
+        protected readonly Client _client;
+        protected readonly ISettings _clientSettings;
+        protected Inventory _inventory;
+        protected readonly BotStats _stats;
+        protected readonly Navigation _navigation;
+        protected GetPlayerResponse _playerProfile;
+        protected static DateTime _lastLuckyEggTime;
+        protected static DateTime _lastIncenseTime;
 
         public readonly string ConfigsPath = Path.Combine(Directory.GetCurrentDirectory(), "Settings");
 
-        private int _recycleCounter = 0;
-        private bool _isInitialized = false;
+        protected int _recycleCounter = 0;
+        protected bool _isInitialized = false;
 
         public Logic(ISettings clientSettings)
         {
@@ -214,7 +214,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private async Task ExecuteFarmingPokestopsAndPokemons(bool path)
+        protected async Task ExecuteFarmingPokestopsAndPokemons(bool path)
         {
             if (!path)
                 await ExecuteFarmingPokestopsAndPokemons();
@@ -348,7 +348,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private async Task ExecuteFarmingPokestopsAndPokemons()
+        protected async Task ExecuteFarmingPokestopsAndPokemons()
         {
             var distanceFromStart = LocationUtils.CalculateDistanceInMeters(
                 _clientSettings.DefaultLatitude, _clientSettings.DefaultLongitude,
@@ -462,7 +462,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private async Task CatchEncounter(EncounterResponse encounter, MapPokemon pokemon)
+        protected async Task CatchEncounter(EncounterResponse encounter, MapPokemon pokemon)
         {
             CatchPokemonResponse caughtPokemonResponse;
             var attemptCounter = 1;
@@ -532,7 +532,7 @@ namespace PokemonGo.RocketAPI.Logic
             while (caughtPokemonResponse.Status == CatchPokemonResponse.Types.CatchStatus.CatchMissed || caughtPokemonResponse.Status == CatchPokemonResponse.Types.CatchStatus.CatchEscape);
         }
 
-        private async Task ExecuteCatchAllNearbyPokemons()
+        protected async Task ExecuteCatchAllNearbyPokemons()
         {
             var mapObjects = await _client.Map.GetMapObjects();
 
@@ -545,7 +545,7 @@ namespace PokemonGo.RocketAPI.Logic
             {
                 ICollection<PokemonId> filter = _clientSettings.PokemonsToNotCatch;
                 pokemons = pokemons.Where(p => !filter.Contains(p.PokemonId)).ToList();
-           }
+            }
 
             if (pokemons.Any())
                 Logger.Write($"Found {pokemons.Count()} catchable Pokemon", LogLevel.Info);
@@ -566,7 +566,7 @@ namespace PokemonGo.RocketAPI.Logic
             if (_clientSettings.TransferPokemon) await TransferPokemon();
         }
 
-        private async Task EvolvePokemon()
+        protected async Task EvolvePokemon()
         {
             await Inventory.GetCachedInventory(_client, true);
             var pokemonToEvolve = await _inventory.GetPokemonToEvolve(_clientSettings.PrioritizeIVOverCP, _clientSettings.PokemonsToEvolve);
@@ -586,7 +586,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private async Task TransferPokemon()
+        protected async Task TransferPokemon()
         {
             await Inventory.GetCachedInventory(_client, true);
             var pokemonToTransfer = await _inventory.GetPokemonToTransfer(_clientSettings.NotTransferPokemonsThatCanEvolve, _clientSettings.PrioritizeIVOverCP, _clientSettings.PokemonsToNotTransfer);
@@ -620,7 +620,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private async Task RecycleItems()
+        protected async Task RecycleItems()
         {
             await Inventory.GetCachedInventory(_client, true);
             var items = await _inventory.GetItemsToRecycle(_clientSettings);
@@ -638,7 +638,7 @@ namespace PokemonGo.RocketAPI.Logic
             _recycleCounter = 0;
         }
 
-        private async Task<ItemId> GetBestBall(EncounterResponse encounter)
+        protected async Task<ItemId> GetBestBall(EncounterResponse encounter)
         {
             var pokemonCp = encounter?.WildPokemon?.PokemonData?.Cp;
             var iV = Math.Round(PokemonInfo.CalculatePokemonPerfection(encounter?.WildPokemon?.PokemonData));
@@ -668,7 +668,7 @@ namespace PokemonGo.RocketAPI.Logic
             return balls.OrderBy(g => g.Key).First().Key;
         }
 
-        private async Task<ItemId> GetBestBerry(EncounterResponse encounter)
+        protected async Task<ItemId> GetBestBerry(EncounterResponse encounter)
         {
             var pokemonCp = encounter?.WildPokemon?.PokemonData?.Cp;
             var iV = Math.Round(PokemonInfo.CalculatePokemonPerfection(encounter?.WildPokemon?.PokemonData));
@@ -706,7 +706,7 @@ namespace PokemonGo.RocketAPI.Logic
             return berries.OrderBy(g => g.Key).First().Key;
         }
 
-        private async Task DisplayHighests()
+        protected async Task DisplayHighests()
         {
             Logger.Write("====== DisplayHighestsCP ======", LogLevel.Info, ConsoleColor.Yellow);
             var highestsPokemonCp = await _inventory.GetHighestsCp(10);
@@ -724,7 +724,7 @@ namespace PokemonGo.RocketAPI.Logic
             }
         }
 
-        private List<GpxReader.Trk> GetGpxTracks()
+        protected List<GpxReader.Trk> GetGpxTracks()
         {
             var xmlString = File.ReadAllText(_clientSettings.GPXFile);
             var readgpx = new GpxReader(xmlString);
@@ -732,7 +732,7 @@ namespace PokemonGo.RocketAPI.Logic
         }
 
         /*
-        private async Task DisplayPlayerLevelInTitle(bool updateOnly = false)
+        protected async Task DisplayPlayerLevelInTitle(bool updateOnly = false)
         {
             _playerProfile = _playerProfile.Profile != null ? _playerProfile : await _client.GetProfile();
             var playerName = _playerProfile.Profile.Username ?? "";
@@ -780,7 +780,7 @@ namespace PokemonGo.RocketAPI.Logic
         /// <summary>
         /// Resets coords if someone could realistically get back to the default coords points since they were last updated (program was last run)
         /// </summary>
-        private void ResetCoords(string filename = "LastCoords.ini")
+        protected void ResetCoords(string filename = "LastCoords.ini")
         {
             var lastcoordsFile = Path.Combine(ConfigsPath, filename);
             if (!File.Exists(lastcoordsFile)) return;

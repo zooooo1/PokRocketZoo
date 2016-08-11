@@ -26,10 +26,10 @@ namespace PokemonGo.RocketAPI.Logic
 {
     public class Inventory
     {
-        private readonly Client _client;
+        protected readonly Client _client;
         public static DateTime LastRefresh;
         public static GetInventoryResponse CachedInventory;
-        private readonly string _exportPath = Path.Combine(Directory.GetCurrentDirectory(), "Export");
+        protected readonly string _exportPath = Path.Combine(Directory.GetCurrentDirectory(), "Export");
 
         public Inventory(Client client)
         {

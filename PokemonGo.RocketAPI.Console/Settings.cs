@@ -28,6 +28,12 @@ namespace PokemonGo.RocketAPI.Console
         private ICollection<PokemonId> _snipePokemons;
         private IEnumerable<Location> _snipeLocations;
 
+        private double _latitude = 0;
+        private double _longtitude = 0;
+        private double _altitude = 0;
+        private int _radius = 500;
+        private double _walkSpeed = 30;
+
         public string GoogleRefreshToken
         {
             get { return UserSettings.Default.GoogleRefreshToken; }
@@ -38,20 +44,29 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
+        public void setDefaultLocation(LocationCondition location)
+        {
+            _latitude = location.Latitude;
+            _longtitude = location.Longitude;
+            _altitude = location.Altitude;
+            _walkSpeed = location.WalkingSpeedInKmPerHour;
+            _radius = (int)location.Radius;
+        }
+
         // original (might be dummy)
-        public AuthType AuthType { get { return _userAuthCondition.UserAuthType; } }
-        public string PtcPassword { get { return _userAuthCondition.Password; } }
-        public string PtcUsername { get { return _userAuthCondition.Username; } }
-        public string GoogleEmail { get { return _userAuthCondition.Username;  } }
-        public string GooglePassword { get { return _userAuthCondition.Password; } }
-        public double DefaultLatitude { get { return LocationsCondition.First().Latitude; } }
-        public double DefaultLongitude { get { return LocationsCondition.First().Longitude; } }
-        public double DefaultAltitude { get { return LocationsCondition.First().Altitude; } }
+        public AuthType AuthType { get { return UserAuthCondition.UserAuthType; } }
+        public string PtcPassword { get { return UserAuthCondition.Password; } }
+        public string PtcUsername { get { return UserAuthCondition.Username; } }
+        public string GoogleEmail { get { return UserAuthCondition.Username;  } }
+        public string GooglePassword { get { return UserAuthCondition.Password; } }
+        public double DefaultLatitude { get { return _latitude == 0 ? LocationsCondition.First().Latitude : _latitude; } set { _latitude = value; } }
+        public double DefaultLongitude { get { return _longtitude == 0 ? LocationsCondition.First().Longitude : _longtitude; } set { _longtitude = value; } }
+        public double DefaultAltitude { get { return _altitude == 0 ? LocationsCondition.First().Altitude : _altitude; } set { _altitude = value; } }
         public bool UseGPXPathing { get { return false; } }
         public string GPXFile { get { return "";  } }
         public bool GPXIgnorePokestops { get { return false; } }
-        public double WalkingSpeedInKilometerPerHour { get { return 30; } }
-        public int MaxTravelDistanceInMeters { get { return 500; } }
+        public double WalkingSpeedInKilometerPerHour { get { return _walkSpeed; } set { _walkSpeed = value; } }
+        public int MaxTravelDistanceInMeters { get { return _radius; } set { _radius = value; } }
 
         public bool UsePokemonToNotCatchList { get { return true; } }
         public bool UsePokemonToNotTransferList { get { return true; } }
